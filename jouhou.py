@@ -34,7 +34,7 @@ request_body = {
     "reasoning": {"effort": "medium"},
     "tools": [{"type": "web_search"}],
     "input": [
-        {"role": "user", "content": [{"type": "input_text", "text": prompt}]}
+        {"role": "user", "content": [{"type": "text", "text": prompt}]}
     ],
 }
 
