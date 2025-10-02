@@ -22,12 +22,8 @@ request_body = {
 resp = client.responses.create(**request_body)
 
 # Responses API のテキスト抽出（最初の出力を取得）
-gpt_text = ""
-for item in resp.output:
-    if item.type == "message":
-        for content_part in item.content:
-            if content_part.type == "text":
-                gpt_text += content_part.text
+gpt_text = resp.output[0].content[0].text.strip()
+
 
 # Discord Webhook へ送信（成功は通常 204）
 r = requests.post(WEBHOOK_URL, json={"content": gpt_text})
