@@ -31,10 +31,8 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 request_body = {
     "model": "gpt-5",
-    "reasoning": {"effort": "medium"},
-    "tools": [{"type": "web_search"}],
     "input": [
-        {"role": "user", "content": [{"type": "text", "text": prompt}]}
+        {"role": "user", "content": [{"type": "input_text", "text": prompt}]}
     ],
 }
 
