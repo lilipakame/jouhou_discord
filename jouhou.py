@@ -1,5 +1,6 @@
 import os
 import requests
+from datetime import datetime
 from openai import OpenAI
 
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
@@ -28,7 +29,7 @@ DEFAULT_PROMPT = """あなたは厳格なマーケット記者。ブラウズ機
 
 prompt = os.environ.get("PROMPT", DEFAULT_PROMPT)
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+client = OpenAI(api_key=OPENAI_API_KEY, timeout=30)
 
 request_body = {
     "model": "gpt-5",
