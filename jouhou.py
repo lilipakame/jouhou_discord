@@ -1,10 +1,11 @@
 import os
-import openai
 import requests
+from openai import OpenAI
 
-openai.api_key = os.environ["OPENAI_API_KEY"]
-webhook_url = os.environ["DISCORD_WEBHOOK_URL"]
-prompt = os.environ.get("PROMPT", "あなたは厳格なマーケット記者。ブラウズ機能を使い、今日{{date_yyyy-mm-dd}}の出来事を対象に、日本と世界の「株式関連ニュースと値動き」を一次/信頼ソースで確認し要約してください。公開時刻と実際の発生日のズレに注意し、誤りや噂は除外。不明な点は「不明」と明記。
+OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+WEBHOOK_URL = os.environ["DISCORD_WEBHOOK_URL"]
+
+DEFAULT_PROMPT = """あなたは厳格なマーケット記者。ブラウズ機能を使い、今日{{date_yyyy-mm-dd}}の出来事のみを対象に、日本と世界の「株式関連ニュースと値動き」を一次/信頼ソースで確認し要約してください。公開時刻と実際の発生日のズレに注意し、誤りや噂は除外。不明な点は「不明」と明記。
 
 必須観点：
 1) 日本株の全体像：日経平均・TOPIX・東証グロース指数の終値/騰落率、売買代金の大小、主因（セクター寄与上位、為替(USD/JPY)、国内外金利、米株/中国市況、材料/決算/政策）。
@@ -21,19 +22,35 @@ prompt = os.environ.get("PROMPT", "あなたは厳格なマーケット記者。
 ・個別：{{銘柄}} {{±x.x%}}（理由）。{{銘柄}} {{±x.x%}}（理由）。
 ・他資産：金{{±x.x%}}、WTI{{±x.x%}}、USD/JPY {{xxx.x}}、米10年{{x.xx%}}。
 ・イベント：{{イベント1}}、{{イベント2}}、{{イベント3}}。
-・明日：{{注目1}}（任意）")
+・明日：{{注目1}}（任意）
+"""
 
-response = openai.ChatCompletion.create(
-    model="gpt-5",
+prompt = os.environ.get("PROMPT", DEFAULT_PROMPT)
+
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+request_body = {
+    "model": "gpt-5",
     reasoning={"effort": "medium"},
     tools: [{type: "web_search"}],
-    messages=[{"role": "user", "content": prompt}]
-)
-gpt_text = response.choices[0].message.content
+    "input": [
+        {"role": "user", "content": [{"type": "text", "text": prompt}]}
+    ],
+}
 
-payload = {"content": gpt_text}
-r = requests.post(webhook_url, json=payload)
+resp = client.responses.create(**request_body)
+
+# Responses API のテキスト抽出（最初の出力を取得）
+gpt_text = ""
+for item in resp.output:
+    if item.type == "message":
+        for content_part in item.content:
+            if content_part.type == "text":
+                gpt_text += content_part.text
+
+# Discord Webhook へ送信（成功は通常 204）
+r = requests.post(WEBHOOK_URL, json={"content": gpt_text})
 if r.status_code == 204:
     print("送信成功！")
 else:
-    print(f"送信失敗: {r.status_code}")
+    print(f"送信失敗: {r.status_code} / {r.text}")
