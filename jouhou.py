@@ -22,11 +22,19 @@ request_body = {
 resp = client.responses.create(**request_body)
 
 # Responses API のテキスト抽出（最初の出力を取得）
-gpt_text = resp.output[0].content[0].text.strip()
+gpt_text = (getattr(resp, "output_text", "") or "").strip()
 
+# --- Discord Webhook 送信（2000字分割対応）---
+MAX = 2000
+chunks = [gpt_text[i:i+MAX] for i in range(0, len(gpt_text), MAX)] or ["（空）"]
 
-# Discord Webhook へ送信（成功は通常 204）
+ok = True
+for i, ch in enumerate(chunks, 1):
+    payload = {"content": ch if len(chunks) == 1 else f"({i}/{len(chunks)})\n{ch}"}
+    r = requests.post(WEBHOOK_URL, json=payload, timeout=10)
+
 r = requests.post(WEBHOOK_URL, json={"content": gpt_text})
+
 if r.status_code == 204:
     print("送信成功！")
 else:
