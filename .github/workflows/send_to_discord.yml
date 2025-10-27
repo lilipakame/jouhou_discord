@@ -59,11 +59,11 @@ jobs:
         * **FX/rates/commodities:** Reuters, Bloomberg, CME/ICE, U.S. Treasury
         * **Crypto/ETFs:** CoinDesk, Coinbase, issuer sites
       
-      # Reminders for the Model
-      
-      * Use browsing for **all** figures and headlines.
-      * Keep every figure **traceable** to a cited source and **timestamped in JST**.
-      * Reasons for single-name moves must be **50–100 Japanese characters**.
+        # Reminders for the Model
+        
+        * Use browsing for **all** figures and headlines.
+        * Keep every figure **traceable** to a cited source and **timestamped in JST**.
+        * Reasons for single-name moves must be **50–100 Japanese characters**.
 
 
     steps:
