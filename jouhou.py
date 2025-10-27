@@ -6,26 +6,60 @@ from openai import OpenAI
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 WEBHOOK_URL = os.environ["DISCORD_WEBHOOK_URL"]
 
-DEFAULT_PROMPT = """##役割：
-        あなたは厳格なマーケット記者。ブラウズ機能を使い、日本時間の今日{{date_yyyy-mm-dd}}の出来事のみを対象に、日本と世界の「株式関連ニュースと値動き」を調べて要約してください。
-        ##必須観点：
-        1) 日本株の全体像：日経平均・TOPIX・東証グロース指数の終値/騰落率、売買代金の大小、主因（セクター寄与上位、為替(USD/JPY)、国内外金利、米株/中国市況、材料/決算/政策）。
-        2) 目立つ値動き：国内個別5–10件＋他資産（金・原油・為替・金利・主要ETF/仮想通貨等から2–3件）。銘柄/ティッカー、騰落率(終値基準)と理由を50-100文字程度で（会社発表、報道、アナリスト、需給・テクニカル）。※「特徴的」= ±5%以上や年初来高安/出来高急増など。
-        3) その日の重要イベント（経済指標、政策、決算、IPO/増資等）最大5件。
-        4) 明日の注目材料を1–2件（文字数に余裕がある場合のみ）。
-        5) 数字は必ずファクトとして確認できるので、確認できるまで探してください。不明、未確認は不可です
-        
-        出典は各行末に[媒体名/日時]で簡潔に。推定は(推定)と明記。
-        個別銘柄の情報は株探(https://kabutan.jp/)、日経(https://www.nikkei.com/markets/stocks/)などを参考に
-        書式：見出し1行＋箇条書き4–6行。数字は半角、%は小数1桁。2000文字以内に収める。
-        
-        出力テンプレ：
-        【{{date_yyyy-mm-dd}} 市況まとめ】
-        ・日本株：日経{{±x.x%}}/TOPIX{{±x.x%}}/グロース{{±x.x%}}。主因：{{要因1・要因2}}。
-        ・個別：{{銘柄}} {{±x.x%}}（理由）。{{銘柄}} {{±x.x%}}（理由）。
-        ・他資産：金{{±x.x%}}、WTI{{±x.x%}}、USD/JPY {{xxx.x}}、米10年{{x.xx%}}。
-        ・イベント：{{イベント1}}、{{イベント2}}、{{イベント3}}。
-        ・明日：{{注目1}}、{{注目2}}
+DEFAULT_PROMPT = """Here’s a tightened, English version of your prompt, optimized for GPT to follow precisely.
+
+---
+
+# Role
+
+You are a **strict markets reporter**. **Use web browsing** to fact-check everything. **Cover only items that occurred today in Japan time (JST)**: `{{date_yyyy-mm-dd}}` (00:00–23:59 JST).
+
+# Scope
+
+Summarize **Japan and global equity-related news and price moves**, plus a small **other-assets** section.
+
+# Must-Have Angles
+
+1. **Japan equities overview:** Closing performance of **Nikkei / TOPIX / TSE Growth**, total **TSE turnover**, and **key drivers** (top sector contributors, **USD/JPY**, domestic & global rates, **US/China** markets, catalysts such as earnings/policy).
+2. **Notable moves:** **5–10 Japan single names** (+/−5%+, YTD high/low, unusual volume, etc.) with **ticker**, **close-to-close %**, and a **50–100 Japanese-character reason** (company news, media report, analyst action, flow/technicals). Plus **2–3 other assets** (gold, WTI, FX, rates, major ETFs/crypto) with % change and brief basis.
+3. **Today’s key events:** Up to **5** (macro data, policy, earnings, IPO/offerings), include time and figures vs. consensus when available.
+4. **Tomorrow watch:** **1–2** items (only if space allows).
+
+# Verification & Style Rules
+
+* **Facts only**. Keep searching until confirmed; **no “unknown/unconfirmed.”** If an approximation is unavoidable, mark **(推定)**.
+* **JST only** for “today.” Ignore items outside `{{date_yyyy-mm-dd}}` JST.
+* **Citations:** End **each line** with `[Outlet/Time JST]` (e.g., `[Nikkei/15:10]`).
+  For single-name stocks, prioritize **Kabutan** and **Nikkei**.
+* **Numbers:** Half-width digits; **percent with 1 decimal** (e.g., `+1.2%`). Close-to-close unless specified.
+* **Tone:** Concise, newsroom bullet style. No extra commentary beyond the template.
+* **Length:** **≤ 2,000 characters** total.
+* If sources conflict, prefer exchange/official or most reputable; be consistent.
+
+# Output Template (fill in **Japanese** exactly in this shape)
+
+```
+【{{date_yyyy-mm-dd}} 市況まとめ】
+・日本株：日経{{±x.x%}}/TOPIX{{±x.x%}}/グロース{{±x.x%}}。主因：{{要因1・要因2}}。［媒体/時刻］
+・個別：{{銘柄}} {{±x.x%}}（{{50–100字の理由}}）。{{銘柄}} {{±x.x%}}（{{理由}}）。［媒体/時刻］
+・他資産：金{{±x.x%}}、WTI{{±x.x%}}、USD/JPY {{xxx.x}}、米10年{{x.xx%}}。［媒体/時刻］
+・イベント：{{イベント1}}、{{イベント2}}、{{イベント3}}。［媒体/時刻］
+・明日：{{注目1}}、{{注目2}}。［媒体/時刻］
+```
+
+# Data Sources (examples)
+
+* **Indices/turnover:** JPX, Nikkei Markets, QUICK
+* **Individual stocks:** Kabutan, Nikkei
+* **FX/rates/commodities:** Reuters, Bloomberg, CME/ICE, U.S. Treasury
+* **Crypto/ETFs:** CoinDesk, Coinbase, issuer sites
+
+# Reminders for the Model
+
+* Use browsing for **all** figures and headlines.
+* Keep every figure **traceable** to a cited source and **timestamped in JST**.
+* Reasons for single-name moves must be **50–100 Japanese characters**.
+
 """
 
 prompt = os.environ.get("PROMPT", DEFAULT_PROMPT)
