@@ -6,8 +6,7 @@ from openai import OpenAI
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 WEBHOOK_URL = os.environ["DISCORD_WEBHOOK_URL"]
 
-DEFAULT_PROMPT = """Here’s a tightened, English version of your prompt, optimized for GPT to follow precisely.
-
+DEFAULT_PROMPT = """
 ---
 
 # Role
