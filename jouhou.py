@@ -2,6 +2,7 @@ import os
 import requests
 from datetime import datetime
 from openai import OpenAI
+from zoneinfo import ZoneInfo
 
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 WEBHOOK_URL = os.environ["DISCORD_WEBHOOK_URL"]
