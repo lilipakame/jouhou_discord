@@ -5,63 +5,31 @@ from openai import OpenAI
 
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 WEBHOOK_URL = os.environ["DISCORD_WEBHOOK_URL"]
+prompt = os.environ["PROMPT"]
 
-DEFAULT_PROMPT = """
----
+# JSTの今日
+JST = ZoneInfo("Asia/Tokyo")
+now = datetime.now(JST)
+today_str = now.strftime("%Y-%m-%d")
 
-# Role
+# 日本の営業日判定（jpholiday があれば祝日も考慮、無ければ土日だけ）
+def is_jp_holiday(date_obj):
+    try:
+        jpholiday = import_module("jpholiday")
+        return jpholiday.is_holiday(date_obj)
+    except Exception:
+        return False
 
-You are a **strict markets reporter**. **Use web browsing** to fact-check everything. **Cover only items that occurred today in Japan time (JST)**: `{{date_yyyy-mm-dd}}` (00:00–23:59 JST).
+is_weekday = now.weekday() < 5            # Mon=0 ... Sun=6
+is_holiday = is_jp_holiday(now.date())    # 祝日（jpholidayが無ければ常にFalse）
+is_business_day = is_weekday and not is_holiday
 
-# Scope
+if not is_business_day:
+    print(f"本日は休日のためスキップ: {today_str} JST (weekday={now.weekday()}, jp_holiday={is_holiday})")
+    sys.exit(0)
 
-Summarize **Japan and global equity-related news and price moves**, plus a small **other-assets** section.
-
-# Must-Have Angles
-
-1. **Japan equities overview:** Closing performance of **Nikkei / TOPIX / TSE Growth**, total **TSE turnover**, and **key drivers** (top sector contributors, **USD/JPY**, domestic & global rates, **US/China** markets, catalysts such as earnings/policy).
-2. **Notable moves:** **5–10 Japan single names** (+/−5%+, YTD high/low, unusual volume, etc.) with **ticker**, **close-to-close %**, and a **50–100 Japanese-character reason** (company news, media report, analyst action, flow/technicals). Plus **2–3 other assets** (gold, WTI, FX, rates, major ETFs/crypto) with % change and brief basis.
-3. **Today’s key events:** Up to **5** (macro data, policy, earnings, IPO/offerings), include time and figures vs. consensus when available.
-4. **Tomorrow watch:** **1–2** items (only if space allows).
-
-# Verification & Style Rules
-
-* **Facts only**. Keep searching until confirmed; **no “unknown/unconfirmed.”** If an approximation is unavoidable, mark **(推定)**.
-* **JST only** for “today.” Ignore items outside `{{date_yyyy-mm-dd}}` JST.
-* **Citations:** End **each line** with `[Outlet/Time JST]` (e.g., `[Nikkei/15:10]`).
-  For single-name stocks, prioritize **Kabutan** and **Nikkei**.
-* **Numbers:** Half-width digits; **percent with 1 decimal** (e.g., `+1.2%`). Close-to-close unless specified.
-* **Tone:** Concise, newsroom bullet style. No extra commentary beyond the template.
-* **Length:** **≤ 2,000 characters** total.
-* If sources conflict, prefer exchange/official or most reputable; be consistent.
-
-# Output Template (fill in **Japanese** exactly in this shape)
-
-```
-【{{date_yyyy-mm-dd}} 市況まとめ】
-・日本株：日経{{±x.x%}}/TOPIX{{±x.x%}}/グロース{{±x.x%}}。主因：{{要因1・要因2}}。［媒体/時刻］
-・個別：{{銘柄}} {{±x.x%}}（{{50–100字の理由}}）。{{銘柄}} {{±x.x%}}（{{理由}}）。［媒体/時刻］
-・他資産：金{{±x.x%}}、WTI{{±x.x%}}、USD/JPY {{xxx.x}}、米10年{{x.xx%}}。［媒体/時刻］
-・イベント：{{イベント1}}、{{イベント2}}、{{イベント3}}。［媒体/時刻］
-・明日：{{注目1}}、{{注目2}}。［媒体/時刻］
-```
-
-# Data Sources (examples)
-
-* **Indices/turnover:** JPX, Nikkei Markets, QUICK
-* **Individual stocks:** Kabutan, Nikkei
-* **FX/rates/commodities:** Reuters, Bloomberg, CME/ICE, U.S. Treasury
-* **Crypto/ETFs:** CoinDesk, Coinbase, issuer sites
-
-# Reminders for the Model
-
-* Use browsing for **all** figures and headlines.
-* Keep every figure **traceable** to a cited source and **timestamped in JST**.
-* Reasons for single-name moves must be **50–100 Japanese characters**.
-
-"""
-
-prompt = os.environ.get("PROMPT", DEFAULT_PROMPT)
+# PROMPT内の{{date_yyyy-mm-dd}} をJSTの今日で置換
+prompt = prompt_template.replace("{{date_yyyy-mm-dd}}", today_str)
 
 client = OpenAI(api_key=OPENAI_API_KEY, timeout=60)
 
