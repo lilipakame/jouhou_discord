@@ -29,9 +29,6 @@ if not is_business_day:
     print(f"本日は休日のためスキップ: {today_str} JST (weekday={now.weekday()}, jp_holiday={is_holiday})")
     sys.exit(0)
 
-# PROMPT内の{{date_yyyy-mm-dd}} をJSTの今日で置換
-prompt = prompt_template.replace("{{date_yyyy-mm-dd}}", today_str)
-
 client = OpenAI(api_key=OPENAI_API_KEY, timeout=60)
 
 request_body = {
