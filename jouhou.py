@@ -1,7 +1,9 @@
 import os
+import sys
 import requests
 import httpx
 from datetime import datetime
+from importlib import import_module
 from openai import OpenAI
 from zoneinfo import ZoneInfo
 
@@ -35,7 +37,7 @@ client = OpenAI(api_key=OPENAI_API_KEY, timeout=httpx.Timeout(1000.0))
 request_body = {
     "model": "gpt-5",
     "tools": [{"type": "web_search"}],
-    "reasoning": {"effort": "high"}, 
+    "reasoning": {"effort": "high"},
     "input": [
         {"role": "user", "content": [{"type": "input_text", "text": prompt}]}
     ],
