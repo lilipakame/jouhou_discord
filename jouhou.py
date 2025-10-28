@@ -4,7 +4,7 @@ import requests
 import httpx
 from datetime import datetime
 from importlib import import_module
-from openai import OpenAI
+from openai import APIConnectionError, APITimeoutError, OpenAI
 from zoneinfo import ZoneInfo
 
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
@@ -43,7 +43,26 @@ request_body = {
     ],
 }
 
-resp = client.responses.create(**request_body)
+def run_with_retries(create_fn, *, max_attempts=3, base_wait=2.0):
+    if max_attempts < 2:
+        raise ValueError(
+            "max_attempts must allow multiple retries (>=2) to satisfy retry policy"
+        )
+    last_error = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return create_fn()
+        except (APIConnectionError, APITimeoutError) as exc:
+            last_error = exc
+            if attempt == max_attempts:
+                break
+            wait_time = base_wait * (2 ** (attempt - 1))
+            print(f"OpenAI API call failed ({type(exc).__name__}: {exc}). Retrying in {wait_time:.1f}s...")
+            time.sleep(wait_time)
+    raise last_error
+
+
+resp = run_with_retries(lambda: client.responses.create(**request_body))
 
 # Responses API のテキスト抽出（最初の出力を取得）
 gpt_text = (getattr(resp, "output_text", "") or "").strip()
