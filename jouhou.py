@@ -1,6 +1,5 @@
 import os
 import sys
-import time
 import requests
 import httpx
 from datetime import datetime
