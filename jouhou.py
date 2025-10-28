@@ -30,7 +30,7 @@ if not is_business_day:
     print(f"本日は休日のためスキップ: {today_str} JST (weekday={now.weekday()}, jp_holiday={is_holiday})")
     sys.exit(0)
 
-client = OpenAI(api_key=OPENAI_API_KEY, timeout=httpx.Timeout(15.0, read=5.0, write=10.0, connect=3.0))
+client = OpenAI(api_key=OPENAI_API_KEY, timeout=httpx.Timeout(1000.0))
 
 request_body = {
     "model": "gpt-5",
