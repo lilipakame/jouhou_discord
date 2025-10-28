@@ -1,5 +1,6 @@
 import os
 import requests
+import httpx
 from datetime import datetime
 from openai import OpenAI
 from zoneinfo import ZoneInfo
